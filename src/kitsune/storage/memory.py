@@ -135,6 +135,12 @@ class ConversationStore:
             )
             self._db.commit()
 
+    def reply_text(self, message_id: str) -> Optional[str]:
+        """What Kitsune said in a logged reply (for when someone replies to it)."""
+        with self._lock:
+            row = self._db.execute("SELECT reply FROM replies WHERE message_id=?", (message_id,)).fetchone()
+        return row[0] if row else None
+
     def is_reply(self, message_id: str) -> bool:
         with self._lock:
             return self._db.execute("SELECT 1 FROM replies WHERE message_id=?", (message_id,)).fetchone() is not None

@@ -4,6 +4,9 @@
 - Per-user context in SQLite with compaction into a rolling memory after 8 exchanges (last 2 kept verbatim).
 - 👍/👎 on every talking video, stored with the prompt, reply and mood for future logs/training.
 - Her mood as a reaction on the user's message. A fuller main prompt. `!memory`.
+- Replies to her videos give her the line being answered as context.
+- Her Vector profile (name Kitsune, about text, avatar) is applied at startup.
+- NovelAI TTS retries server errors and limits parallel requests.
 
 ## 0.3.0
 - `!image <prompt>`. Kitsune ignores every channel except her chat channel (videos) and image channel (art).

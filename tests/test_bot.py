@@ -51,9 +51,17 @@ class User:
         return f"@{self.name}" in message.content
 
 
+class Ref:
+    def __init__(self, message_id, author_id=None, content=None):
+        self.message_id, self.author_id, self.content, self.resolved = message_id, author_id, content, None
+
+
 class Message:
-    def __init__(self, content, channel, author=None):
+    reference = None
+
+    def __init__(self, content, channel, author=None, reference=None):
         self.content, self.channel, self.author = content, channel, author or User()
+        self.reference = reference
         self.guild = Community()
         self.replies = []
 
@@ -230,3 +238,30 @@ async def test_setup_hook_loads_cogs(bot):
     await bot.setup_hook()
     assert {"Chat", "Images", "Utility"} <= set(bot.cogs)
     assert {"kitsune", "image", "forget", "memory", "mood", "help"} <= {c.name for c in bot.commands}
+
+
+async def test_replies_to_her_include_what_she_said(bot):
+    chat, _ = cogs(bot)
+    first = Message("recommend me something", BOT_CH)
+    await chat.on_message(first)
+    video_id = first.sent_replies[0].id
+    reply = Message("why that one?", BOT_CH, reference=Ref(video_id))
+    await chat.on_message(reply)
+    assert reply.sent_replies  # replies trigger her
+    last_user_msg = bot.pipeline.chat.calls[-1][-1]["content"]
+    assert 'Replying to what you said: "Hah, of course I watched it!"' in last_user_msg
+    assert last_user_msg.endswith("why that one?")
+
+
+async def test_reply_to_her_unlogged_message_uses_quoted_text(bot):
+    chat, _ = cogs(bot)
+    msg = Message("lol", BOT_CH, reference=Ref("old", author_id="kitsune", content="I'm the best fox"))
+    await chat.on_message(msg)
+    assert "I'm the best fox" in bot.pipeline.chat.calls[-1][-1]["content"]
+
+
+async def test_reply_to_someone_else_is_just_a_message(bot):
+    chat, _ = cogs(bot)
+    msg = Message("agreed", BOT_CH, reference=Ref("x", author_id="u9", content="Naruto rules"))
+    await chat.on_message(msg)
+    assert bot.pipeline.chat.calls[-1][-1]["content"] == "agreed"

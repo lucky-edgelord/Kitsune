@@ -34,7 +34,7 @@ Kitsune only uses her two channels and **ignores every other channel completely*
 
 | Channel | What she does |
 |---|---|
-| **🤖┊Kitsune Bot** | Just talk: she reacts to your message with her mood (😄 😠 😐 😢 😳), then answers with a talking video with subtitles. Every video gets 👍 / 👎 for feedback. Also `!kitsune <message>`, `!memory` (what she remembers about you), `!forget` (clear it), `!mood <happy\|mad\|neutral\|sad\|shy>`, `!help` |
+| **🤖┊Kitsune Bot** | Just talk: she reacts to your message with her mood (😄 😠 😐 😢 😳), then answers with a talking video with subtitles. Replying to one of her videos gives her that line as context. Every video gets 👍 / 👎 for feedback. Also `!kitsune <message>`, `!memory` (what she remembers about you), `!forget` (clear it), `!mood <happy\|mad\|neutral\|sad\|shy>`, `!help` |
 | **🖼️┊Anime Image Generator** | Type a prompt, or `!image <prompt>`, and she draws it with NovelAI. Also `!help` |
 
 Channels are matched by name (or id) via `KITSUNE_CHAT_CHANNELS` / `KITSUNE_IMAGE_CHANNELS`, so renaming the emoji
