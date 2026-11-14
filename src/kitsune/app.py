@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from typing import Any, Optional
 
 from vector.ext import commands
@@ -14,6 +15,8 @@ from .pipeline import ReplyPipeline
 from .services import Services
 
 log = logging.getLogger(__name__)
+
+MISSING_AVATAR = object()
 
 COGS = ("kitsune.cogs.chat", "kitsune.cogs.images", "kitsune.cogs.utility")
 
@@ -45,6 +48,27 @@ class KitsuneBot(commands.Bot):
 
     async def on_ready(self) -> None:
         log.info("Kitsune is online as %s", self.user)
+        if self.config.set_profile:
+            await self.apply_profile()
+
+    async def apply_profile(self) -> None:
+        """Set her display name, about text and avatar, only when the name or about differ (no re-upload loop)."""
+        c, me = self.config, self.user
+        if me is None:
+            return
+        current = (getattr(me, "display_name", None) or getattr(me, "name", "")) or ""
+        about = getattr(getattr(me, "_profile", None), "about", None)
+        if current == c.display_name and (about is None or about == c.about):
+            return
+        try:
+            avatar = c.avatar_file if c.avatar_file and os.path.isfile(c.avatar_file) else MISSING_AVATAR
+            kwargs = {"username": c.display_name, "about": c.about}
+            if avatar is not MISSING_AVATAR:
+                kwargs["avatar"] = avatar
+            await me.edit(**kwargs)
+            log.info("profile set: %s", c.display_name)
+        except Exception as e:
+            log.warning("couldn't update profile: %s", e)
 
     async def close(self) -> None:
         await self.services.aclose()

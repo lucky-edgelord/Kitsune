@@ -60,6 +60,11 @@ class Config:
     emotion_model: str = "bhadresh-savani/distilbert-base-uncased-emotion"
     persona_file: str = str(PACKAGE_DIR / "persona" / "kitsune.md")
     sprites_dir: str = str(PACKAGE_DIR / "assets" / "sprites")
+    # her Vector profile, applied at startup when it differs (KITSUNE_SET_PROFILE=false to leave it alone)
+    set_profile: bool = True
+    display_name: str = "Kitsune"
+    about: str = "🦊 The Fox Mafia's anime fox-girl. Talk to me in Kitsune Bot, make art in Anime Image Generator."
+    avatar_file: str = str(PACKAGE_DIR / "assets" / "avatar.png")
     emotion_threshold: float = 0.45
     max_concurrent_renders: int = 2
 
@@ -88,6 +93,10 @@ class Config:
         c.emotion_model = os.getenv("KITSUNE_EMOTION_MODEL", c.emotion_model)
         c.persona_file = os.getenv("KITSUNE_PERSONA_FILE", c.persona_file)
         c.sprites_dir = os.getenv("KITSUNE_SPRITES_DIR", c.sprites_dir)
+        c.set_profile = _bool("KITSUNE_SET_PROFILE", c.set_profile)
+        c.display_name = os.getenv("KITSUNE_NAME", c.display_name)
+        c.about = os.getenv("KITSUNE_ABOUT", c.about)
+        c.avatar_file = os.getenv("KITSUNE_AVATAR", c.avatar_file)
         c.emotion_threshold = float(os.getenv("KITSUNE_EMOTION_THRESHOLD", c.emotion_threshold))
         c.max_concurrent_renders = int(os.getenv("KITSUNE_MAX_CONCURRENT", c.max_concurrent_renders))
         return c

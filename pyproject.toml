@@ -32,7 +32,7 @@ Issues = "https://github.com/lucky-edgelord/Kitsune/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
-kitsune = ["persona/*.md", "assets/sprites/*/*.png"]
+kitsune = ["persona/*.md", "assets/sprites/*/*.png", "assets/avatar.png"]
 
 [tool.ruff]
 line-length = 120
