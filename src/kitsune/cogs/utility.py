@@ -35,7 +35,7 @@ class Utility(commands.Cog):
             "### 🦊 Kitsune\n"
             f"Talk to me here in **Kitsune Bot**: just type, or `{p}kitsune <message>`.\n"
             f"Make art in **Anime Image Generator**: type a prompt, or `{p}image <prompt>`.\n"
-            f"`{p}forget` clears our chat · `{p}mood <{moods}>` shows a face"
+            f"`{p}memory` shows what I remember · `{p}forget` clears it · `{p}mood <{moods}>` shows a face"
         )
 
 

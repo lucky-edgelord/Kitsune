@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0
+- Per-user context in SQLite with compaction into a rolling memory after 8 exchanges (last 2 kept verbatim).
+- 👍/👎 on every talking video, stored with the prompt, reply and mood for future logs/training.
+- Her mood as a reaction on the user's message. A fuller main prompt. `!memory`.
+
 ## 0.3.0
 - `!image <prompt>`. Kitsune ignores every channel except her chat channel (videos) and image channel (art).
 - The avatar is now a port of Neku's pipeline: per-sentence TTS segments, ffprobe-timed SRT, sox/ffmpeg merge,

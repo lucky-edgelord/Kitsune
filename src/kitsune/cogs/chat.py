@@ -1,4 +1,7 @@
-"""Talking to Kitsune, only in her chat channel."""
+"""Talking to Kitsune, only in her chat channel.
+
+Every talking-video reply gets 👍 and 👎; votes are stored with the prompt, reply and mood (``feedback`` table).
+"""
 
 from __future__ import annotations
 
@@ -12,6 +15,8 @@ from ..channels import is_chat
 from ..errors import ChatError
 
 log = logging.getLogger(__name__)
+
+THUMBS = {"👍": 1, "👎": -1}
 
 
 class Chat(commands.Cog):
@@ -32,7 +37,12 @@ class Chat(commands.Cog):
         async with message.channel.typing():
             try:
                 reply = await bot.pipeline.reply(
-                    str(message.channel.id), str(author.id), name, text, video=bot.config.talking_video, on_mood=react
+                    str(author.id),
+                    name,
+                    text,
+                    channel=str(message.channel.id),
+                    video=bot.config.talking_video,
+                    on_mood=react,
                 )
             except ChatError as e:
                 log.warning("chat failed: %s", e)
@@ -41,10 +51,20 @@ class Chat(commands.Cog):
         if not reply.text:
             return
         if reply.video:  # the words are in the subtitles, so the video goes alone (like Neku)
-            await message.reply(file=vector.File(reply.video, filename="kitsune.mp4"))
+            sent = await message.reply(file=vector.File(reply.video, filename="kitsune.mp4"))
         else:
-            await message.reply(reply.text)
+            sent = await message.reply(reply.text)
+        if sent is not None and getattr(sent, "id", None):
+            bot.pipeline.store.log_reply(
+                str(sent.id), str(author.id), text, reply.text, reply.mood.value, channel=str(message.channel.id)
+            )
+            for emoji in THUMBS:
+                try:
+                    await sent.add_reaction(emoji)
+                except Exception as e:  # reactions are a nicety, never a failure
+                    log.debug("couldn't add %s: %s", emoji, e)
 
+    # -- messages --------------------------------------------------------------------------------------------
     @commands.Cog.listener()
     async def on_message(self, message: Any) -> None:
         bot = self.bot
@@ -54,6 +74,26 @@ class Chat(commands.Cog):
         if text and not text.startswith(bot.config.prefix):
             await self.talk(message, text)
 
+    # -- feedback --------------------------------------------------------------------------------------------
+    def _vote(self, payload: Any) -> Any:
+        me = getattr(self.bot.user, "id", None)
+        if payload.emoji not in THUMBS or str(payload.user_id) == str(me):
+            return None
+        return THUMBS[payload.emoji]
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload: Any) -> None:
+        rating = self._vote(payload)
+        if rating is not None and self.bot.pipeline.store.rate(str(payload.message_id), str(payload.user_id), rating):
+            log.info("feedback %+d on %s from %s", rating, payload.message_id, payload.user_id)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload: Any) -> None:
+        rating = self._vote(payload)
+        if rating is not None:
+            self.bot.pipeline.store.unrate(str(payload.message_id), str(payload.user_id), rating)
+
+    # -- commands --------------------------------------------------------------------------------------------
     @commands.command(name="kitsune", aliases=["kit", "k"])
     async def kitsune(self, ctx: commands.Context, *, text: str = "") -> None:
         """Talk to Kitsune."""
@@ -64,9 +104,17 @@ class Chat(commands.Cog):
 
     @commands.command(name="forget", aliases=["reset"])
     async def forget(self, ctx: commands.Context) -> None:
-        """Make Kitsune forget your conversation."""
-        n = self.bot.pipeline.store.forget(str(ctx.channel.id), str(ctx.author.id))
+        """Make Kitsune forget your conversation and her memory of you."""
+        n = self.bot.pipeline.store.forget(str(ctx.author.id))
         await ctx.reply("🦊 Forgotten. Who are you again?" if n else "🦊 We haven't even talked yet, kit.")
+
+    @commands.command(name="memory")
+    async def memory(self, ctx: commands.Context) -> None:
+        """What Kitsune remembers about you."""
+        summary = self.bot.pipeline.store.memory(str(ctx.author.id))
+        await ctx.reply(
+            f"🦊 What I remember about you:\n> {summary}" if summary else "🦊 Nothing yet, kit. Talk to me!"
+        )
 
 
 async def setup(bot: Any) -> None:

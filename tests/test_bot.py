@@ -59,7 +59,12 @@ class Message:
 
     async def reply(self, content=None, **kw):
         self.replies.append((content, kw))
-        return self
+        sent = Message(content or "", self.channel, User("kitsune", "Kitsune", bot=True))
+        sent.id = f"sent{len(self.replies)}"
+        self.sent_replies = getattr(self, "sent_replies", []) + [sent]
+        return sent
+
+    id = "msg"
 
     async def add_reaction(self, emoji):
         self.reactions = getattr(self, "reactions", []) + [emoji]
@@ -112,6 +117,29 @@ async def test_chat_channel_reply_has_video(bot):
     text, kw = msg.replies[0]
     assert text is None and kw["file"].filename == "kitsune.mp4"  # video only, like Neku
     assert msg.reactions == ["😄"]  # her mood, on the user's message
+    assert msg.sent_replies[0].reactions == ["👍", "👎"]  # feedback buttons on the video
+
+
+async def test_thumbs_are_stored_as_feedback(bot):
+    chat, _ = cogs(bot)
+    msg = Message("recommend me something", BOT_CH)
+    await chat.on_message(msg)
+    video_id = msg.sent_replies[0].id
+
+    class Payload:
+        def __init__(self, emoji, user_id, message_id=video_id):
+            self.emoji, self.user_id, self.message_id = emoji, user_id, message_id
+
+    await chat.on_raw_reaction_add(Payload("👍", "kitsune"))  # her own reaction is not a vote
+    await chat.on_raw_reaction_add(Payload("👍", "u1"))
+    await chat.on_raw_reaction_add(Payload("👎", "u2"))
+    await chat.on_raw_reaction_add(Payload("😄", "u3"))
+    await chat.on_raw_reaction_add(Payload("👍", "u4", message_id="someone-elses-message"))
+    rows = bot.pipeline.store.feedback()
+    assert sorted((r["rater"], r["rating"]) for r in rows) == [("u1", 1), ("u2", -1)]
+    assert rows[0]["prompt"] == "recommend me something" and rows[0]["mood"] == "happy"
+    await chat.on_raw_reaction_remove(Payload("👎", "u2"))
+    assert [(r["rater"], r["rating"]) for r in bot.pipeline.store.feedback()] == [("u1", 1)]
 
 
 async def test_ignores_every_other_channel(bot):
@@ -179,7 +207,7 @@ async def test_image_channel_draws(bot):
         assert "fox ears" in kw["embed"].description and len(kw["files"]) == 1
         assert kw["embed"].image.url == "attachment://kitsune_0.png"
         assert [f.name for f in kw["embed"].fields] == ["Model", "Size", "Seed"]
-        assert msg.reactions == ["❤️"]
+        assert msg.sent_replies[0].reactions == ["❤️"]
     msg = Message("!image 1girl, kitsune", ART_CH)
     await images.draw(msg, "1girl, kitsune")
     assert len(msg.replies[0][1]["files"]) == 1
@@ -201,4 +229,4 @@ async def test_image_errors_and_missing_token(bot):
 async def test_setup_hook_loads_cogs(bot):
     await bot.setup_hook()
     assert {"Chat", "Images", "Utility"} <= set(bot.cogs)
-    assert {"kitsune", "image", "forget", "mood", "help"} <= {c.name for c in bot.commands}
+    assert {"kitsune", "image", "forget", "memory", "mood", "help"} <= {c.name for c in bot.commands}

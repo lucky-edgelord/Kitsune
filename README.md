@@ -15,7 +15,9 @@ Mafia avatar. Her expression is picked by a **DistilBERT emotion** model. She al
 
 ## How a reply is made
 
-1. Your message and recent history (per user, per channel, in SQLite) go to Ollama with Kitsune's persona
+1. Your message goes to Ollama with her main prompt, her memory of you and your recent turns. Every user has their
+   own context in SQLite; after 8 exchanges the older ones are compacted into that memory (the full log is kept).
+   Her main prompt is
    ([persona/kitsune.md](src/kitsune/persona/kitsune.md)).
 2. [`bhadresh-savani/distilbert-base-uncased-emotion`](https://huggingface.co/bhadresh-savani/distilbert-base-uncased-emotion)
    reads her reply: joy/surprise → happy, anger → mad, sadness/fear → sad, love → shy, low confidence → neutral.
@@ -32,7 +34,7 @@ Kitsune only uses her two channels and **ignores every other channel completely*
 
 | Channel | What she does |
 |---|---|
-| **🤖┊Kitsune Bot** | Just talk: she reacts to your message with her mood (😄 😠 😐 😢 😳), then answers with a talking video with subtitles. Also `!kitsune <message>`, `!forget` (clear your chat history), `!mood <happy\|mad\|neutral\|sad\|shy>`, `!help` |
+| **🤖┊Kitsune Bot** | Just talk: she reacts to your message with her mood (😄 😠 😐 😢 😳), then answers with a talking video with subtitles. Every video gets 👍 / 👎 for feedback. Also `!kitsune <message>`, `!memory` (what she remembers about you), `!forget` (clear it), `!mood <happy\|mad\|neutral\|sad\|shy>`, `!help` |
 | **🖼️┊Anime Image Generator** | Type a prompt, or `!image <prompt>`, and she draws it with NovelAI. Also `!help` |
 
 Channels are matched by name (or id) via `KITSUNE_CHAT_CHANNELS` / `KITSUNE_IMAGE_CHANNELS`, so renaming the emoji
@@ -72,6 +74,7 @@ Give Kitsune her **own** Vector account (a fresh nsec) and invite it to the Anim
 | `KITSUNE_SUBTITLES` | `true` | burn the reply in as subtitles |
 | `KITSUNE_LIPSYNC` | `smooth` | `smooth` (24 fps) or `neku` (Neku's 16 fps, 3 mouth levels) |
 | `KITSUNE_TALKING_VIDEO` | `true` | `false` for text-only replies |
+| `KITSUNE_COMPACT_AFTER`, `KITSUNE_KEEP_RECENT` | `8`, `2` | compact a user's context into memory after N exchanges, keeping the last M verbatim |
 | `KITSUNE_PREFIX`, `KITSUNE_DATA_DIR` | `!`, `./data` | |
 
 ## Project layout

@@ -45,7 +45,8 @@ class Config:
     ollama_host: str = "http://localhost:11434"
     ollama_model: str = "llama3.1"
     ollama_api_key: str = ""
-    history_turns: int = 12
+    compact_after: int = 8  # summarise a user's context into memory after this many exchanges
+    keep_recent: int = 2  # exchanges kept verbatim after compacting
     # NovelAI
     novelai_token: str = ""
     voice_seed: str = "Aurae"
@@ -74,7 +75,8 @@ class Config:
         c.ollama_host = os.getenv("OLLAMA_HOST", c.ollama_host).rstrip("/")
         c.ollama_model = os.getenv("OLLAMA_MODEL", c.ollama_model)
         c.ollama_api_key = os.getenv("OLLAMA_API_KEY", "")
-        c.history_turns = int(os.getenv("KITSUNE_HISTORY_TURNS", c.history_turns))
+        c.compact_after = int(os.getenv("KITSUNE_COMPACT_AFTER", c.compact_after))
+        c.keep_recent = int(os.getenv("KITSUNE_KEEP_RECENT", c.keep_recent))
         c.novelai_token = os.getenv("NOVELAI_TOKEN", "")
         c.voice_seed = os.getenv("NOVELAI_VOICE_SEED", c.voice_seed)
         c.image_model = os.getenv("NOVELAI_IMAGE_MODEL", c.image_model)

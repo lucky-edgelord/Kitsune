@@ -45,3 +45,19 @@ What changed and why:
 * **Moods.** DistilBERT picks which sprite set fills the grid.
 * **Readable subtitles** for phones (bold, outlined, scaled to the video), and all blocking work runs off the event
   loop so the bot stays responsive while rendering.
+
+## Context and memory
+
+Everything is in one SQLite file (`<data_dir>/kitsune.db`):
+
+| table | what |
+|---|---|
+| `turns` | every message, per user; `compacted = 1` once summarised (kept as logs, not sent to the model) |
+| `memories` | one rolling summary per user |
+| `replies` | each talking-video reply: message id, user, prompt, reply text, mood |
+| `feedback` | 👍 (+1) / 👎 (-1) per rater per reply; `ConversationStore.feedback()` exports them joined with the replies |
+
+The model sees: the main prompt (`persona/kitsune.md`), "what you remember about <name>" (their memory), their
+uncompacted turns, and the new message. After a reply, if the user has `compact_after` (8) uncompacted exchanges,
+a background task asks the model to fold all but the last `keep_recent` (2) into their memory. Each user's
+exchanges are serialised with a per-user lock, so their context stays in order even if they send messages quickly.
