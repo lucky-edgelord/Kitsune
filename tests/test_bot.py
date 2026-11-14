@@ -59,6 +59,10 @@ class Message:
 
     async def reply(self, content=None, **kw):
         self.replies.append((content, kw))
+        return self
+
+    async def add_reaction(self, emoji):
+        self.reactions = getattr(self, "reactions", []) + [emoji]
 
 
 @pytest.fixture(autouse=True)
@@ -173,6 +177,8 @@ async def test_image_channel_draws(bot):
         _, kw = msg.replies[0]
         assert "fox ears" in kw["embed"].description and len(kw["files"]) == 1
         assert kw["embed"].image.url == "attachment://kitsune_0.png"
+        assert [f.name for f in kw["embed"].fields] == ["Model", "Size", "Seed"]
+        assert msg.reactions == ["❤️"]
     msg = Message("!image 1girl, kitsune", ART_CH)
     await images.draw(msg, "1girl, kitsune")
     assert len(msg.replies[0][1]["files"]) == 1
