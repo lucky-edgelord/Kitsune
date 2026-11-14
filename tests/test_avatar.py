@@ -12,9 +12,11 @@ from kitsune.avatar import (
     AvatarRenderer,
     SpriteBank,
     audio_analysis,
+    blink_track,
     format_timedelta,
     load_audio,
     merge_mp3s,
+    mouth_track,
     split_lines,
 )
 from kitsune.avatar.subtitles import srt_text
@@ -118,3 +120,18 @@ def test_errors():
         load_audio(b"not audio")
     with pytest.raises(RenderError):
         AvatarRenderer(SpriteBank(SPRITES, size=64)).avatar_video([], Mood.HAPPY)
+
+
+def test_smooth_lipsync_is_default_and_neku_is_optional():
+    import random
+
+    y = load_audio(speech_audio(3))
+    mouth = mouth_track(y)
+    assert 0.2 < sum(mouth) / len(mouth) < 0.8 and not any(mouth_track(np.zeros(22050, np.float32)))
+    blinks = blink_track(24 * 10, rng=random.Random(1))
+    assert 2 <= sum(1 for i, b in enumerate(blinks) if b and (i == 0 or not blinks[i - 1])) <= 5
+    bank = SpriteBank(SPRITES, size=64)
+    smooth_frames, smooth_fps = AvatarRenderer(bank).frames_for(y, Mood.SAD, seed=1)
+    neku_frames, neku_fps = AvatarRenderer(bank, lipsync="neku").frames_for(y, Mood.SAD)
+    assert (smooth_fps, neku_fps) == (24, 16)
+    assert abs(len(smooth_frames) / 24 - len(neku_frames) / 16) < 0.2

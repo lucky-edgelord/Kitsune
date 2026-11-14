@@ -69,6 +69,7 @@ Give Kitsune her **own** Vector account (a fresh nsec) and invite it to the Anim
 | `KITSUNE_CHAT_CHANNELS`, `KITSUNE_IMAGE_CHANNELS` | `kitsune bot`, `anime image generator` | name substrings or ids |
 | `KITSUNE_VIDEO_SIZE` | `512` | square video size |
 | `KITSUNE_SUBTITLES` | `true` | burn the reply in as subtitles |
+| `KITSUNE_LIPSYNC` | `smooth` | `smooth` (24 fps) or `neku` (Neku's 16 fps, 3 mouth levels) |
 | `KITSUNE_TALKING_VIDEO` | `true` | `false` for text-only replies |
 | `KITSUNE_PREFIX`, `KITSUNE_DATA_DIR` | `!`, `./data` | |
 

@@ -57,7 +57,7 @@ class Services:
             emotion=self.emotion,
             store=self.store,
             speech=self.speech,
-            avatar=AvatarRenderer(self.sprites) if self.speech else None,
+            avatar=AvatarRenderer(self.sprites, lipsync=c.lipsync) if self.speech else None,
             history_turns=c.history_turns,
             max_concurrent=c.max_concurrent_renders,
         )

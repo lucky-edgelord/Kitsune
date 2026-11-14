@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import random
 import shutil
 import subprocess
 import tempfile
@@ -29,7 +30,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from ..errors import RenderError
 from ..moods import Mood
-from .lipsync import FPS, audio_analysis, load_audio
+from .lipsync import FPS, SMOOTH_FPS, audio_analysis, blink_track, load_audio, mouth_track
 from .sprites import LOOP, SpriteBank
 from .subtitles import SrtEntry, escape_filter_path, get_duration_ffprobe, write_srt_file
 
@@ -85,24 +86,30 @@ class AvatarRenderer:
         preset: str = "veryfast",
         subtitle_style: str = SUBTITLE_STYLE,
         thresholds: Optional[Tuple[float, float]] = None,
+        lipsync: str = "smooth",
     ) -> None:
         self.sprites = sprites
         self.crf = crf
         self.preset = preset
         self.subtitle_style = subtitle_style
         self.thresholds = thresholds
+        self.lipsync = lipsync  # "smooth" (24 fps open/closed + random blinks) or "neku" (16 fps, 3 classes)
+
+    def frames_for(self, y, mood: Mood, seed: Optional[int] = None) -> Tuple[list, int]:
+        """The frame list and fps for a voice track, by lip-sync style."""
+        if self.lipsync == "neku":
+            grid = self.sprites.grid(mood)
+            return [grid[a][i % LOOP] for i, a in enumerate(audio_analysis(y, thresholds=self.thresholds))], FPS
+        f = self.sprites.frames(mood)
+        mouth = mouth_track(y)
+        blinks = blink_track(len(mouth), rng=random.Random(seed))
+        return [f[f"{'blink' if b else 'open'}_{'talk' if m else 'closed'}"] for m, b in zip(mouth, blinks)], SMOOTH_FPS
 
     def create_grid_video(
-        self,
-        frame_sequence: Sequence[int],
-        mood: Mood,
-        audio_file: str,
-        output_file: str,
-        srt_file: Optional[str] = None,
+        self, frames: Sequence, fps: int, audio_file: str, output_file: str, srt_file: Optional[str] = None
     ) -> None:
         """Neku's ``create_grid_video`` + audio mux + ``add_vid_subs``, in one ffmpeg pass."""
-        grid = self.sprites.grid(mood)
-        size = grid[0][0].shape[1]
+        size = frames[0].shape[1]
         vf: List[str] = []
         if srt_file:
             style = f":force_style='{self.subtitle_style}'" if self.subtitle_style else ""
@@ -119,7 +126,7 @@ class AvatarRenderer:
             "-s",
             f"{size}x{size}",
             "-r",
-            str(FPS),
+            str(fps),
             "-i",
             "pipe:0",
             "-i",
@@ -152,8 +159,8 @@ class AvatarRenderer:
             raise RenderError("ffmpeg is not installed") from e
         assert proc.stdin is not None and proc.stderr is not None
         try:
-            for i, a in enumerate(frame_sequence):
-                proc.stdin.write(grid[a][i % LOOP].tobytes())
+            for frame in frames:
+                proc.stdin.write(frame.tobytes())
             proc.stdin.close()
         except BrokenPipeError:
             pass
@@ -170,9 +177,9 @@ class AvatarRenderer:
             srt = os.path.join(crockpot, "subs.srt")
             merge_mp3s(segments, merged, srt, crockpot)
             with open(merged, "rb") as f:
-                frame_sequence = audio_analysis(load_audio(f.read()), thresholds=self.thresholds)
+                frames, fps = self.frames_for(load_audio(f.read()), mood)
             out = os.path.join(crockpot, "kitsune.mp4")
-            self.create_grid_video(frame_sequence, mood, merged, out, srt if subtitles else None)
+            self.create_grid_video(frames, fps, merged, out, srt if subtitles else None)
             with open(out, "rb") as f:
                 return f.read()
 

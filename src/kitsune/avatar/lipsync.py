@@ -12,6 +12,7 @@ Improvements here:
 
 from __future__ import annotations
 
+import random
 import subprocess
 from typing import List, Optional, Sequence, Tuple
 
@@ -66,3 +67,58 @@ def audio_analysis(
         padded = np.pad(volume_class, 1, mode="edge")
         volume_class = np.median(np.stack([padded[:-2], padded[1:-1], padded[2:]]), axis=0).astype(int)
     return [int(v) for v in volume_class]
+
+
+# -- the default lip-sync: mouth open/closed at 24 fps with random blinks -------------------------------------------
+
+SMOOTH_FPS = 24
+
+
+def mouth_track(
+    y: np.ndarray,
+    fps: int = SMOOTH_FPS,
+    *,
+    hold: int = 2,
+    flap_every: int = 7,
+    sensitivity: float = 0.35,
+    floor: float = 0.003,
+) -> List[bool]:
+    """Open where the voice is loud relative to its own peaks.
+
+    * ``hold``: minimum frames before switching state, so the mouth flaps instead of flickering.
+    * ``flap_every``: in long loud runs, close for one frame every N frames so it reads as speech.
+    """
+    rms = frame_rms(y, fps)
+    peak = float(np.percentile(rms, 90)) if rms.any() else 0.0
+    loud = rms > max(floor, peak * sensitivity)
+    out: List[bool] = []
+    run = 0
+    for want in loud:
+        if out and want != out[-1] and run < hold:
+            want = out[-1]
+        run = run + 1 if out and want == out[-1] else 1
+        out.append(bool(want))
+    open_run = 0
+    for i, is_open in enumerate(out):
+        open_run = open_run + 1 if is_open else 0
+        if open_run and open_run % flap_every == 0:
+            out[i] = False
+    return out
+
+
+def blink_track(
+    frames: int,
+    fps: int = SMOOTH_FPS,
+    *,
+    rng: Optional[random.Random] = None,
+    length: int = 3,
+    every: Tuple[float, float] = (2.5, 5.0),
+) -> List[bool]:
+    rng = rng or random.Random()
+    out = [False] * frames
+    t = int(rng.uniform(1.0, 2.5) * fps)
+    while t < frames:
+        for i in range(t, min(frames, t + length)):
+            out[i] = True
+        t += int(rng.uniform(*every) * fps)
+    return out

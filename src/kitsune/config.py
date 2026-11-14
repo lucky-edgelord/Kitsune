@@ -53,6 +53,7 @@ class Config:
     image_size: str = "portrait"
     # behaviour
     video_size: int = 512  # square talking video
+    lipsync: str = "smooth"  # smooth (24 fps, default) or neku (16 fps, 3 mouth levels)
     subtitles: bool = True  # burn the reply into the video as subtitles, like Neku
     talking_video: bool = True  # reply with a lip-synced video (False: text only)
     emotion_model: str = "bhadresh-savani/distilbert-base-uncased-emotion"
@@ -79,6 +80,7 @@ class Config:
         c.image_model = os.getenv("NOVELAI_IMAGE_MODEL", c.image_model)
         c.image_size = os.getenv("NOVELAI_IMAGE_SIZE", c.image_size)
         c.video_size = int(os.getenv("KITSUNE_VIDEO_SIZE", c.video_size))
+        c.lipsync = os.getenv("KITSUNE_LIPSYNC", c.lipsync)
         c.subtitles = _bool("KITSUNE_SUBTITLES", c.subtitles)
         c.talking_video = _bool("KITSUNE_TALKING_VIDEO", c.talking_video)
         c.emotion_model = os.getenv("KITSUNE_EMOTION_MODEL", c.emotion_model)

@@ -31,7 +31,7 @@ cogs/images.py ──► ImageGenerator.generate()                   providers/i
 |---|---|
 | Inworld returns `[{text, audio}]` per sentence | `ReplyPipeline.do_tts`: Ollama reply split into lines, each voiced by NovelAI (Aurae) |
 | `merge_base64_mp3s_sox` + `get_duration_ffprobe` + `write_srt_file` | `avatar.merge_mp3s` (sox, or ffmpeg if sox is missing) + the same SRT helpers |
-| `audio_analysis` (librosa RMS at 16 fps → 0/1/2) | `avatar.audio_analysis` (ffmpeg decode, thresholds relative to the clip, 3-frame median) |
+| `audio_analysis` (librosa RMS at 16 fps → 0/1/2) | default: `mouth_track` + `blink_track` at 24 fps (mouth follows syllables, random blinks); `KITSUNE_LIPSYNC=neku` keeps Neku's `audio_analysis` |
 | `self.grid` from `vids/0-2.mp4`, `grid[A][i % 32]` | `SpriteBank.grid(mood)`: 3 × 32 frames from the mood's sprites, blink in the loop |
 | `create_grid_video` (OpenCV) → ffmpeg mux → `add_vid_subs` | `AvatarRenderer.create_grid_video`: one ffmpeg pass for frames, audio and subtitles |
 | `ctx.reply(file=miku.mp4)` | the chat cog replies with just the video |
