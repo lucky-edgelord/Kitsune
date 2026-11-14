@@ -28,3 +28,7 @@ async def test_detect_never_raises():
 
 def test_mood_parse():
     assert Mood.parse(" Happy ") is Mood.HAPPY and Mood.parse("nope") is Mood.NEUTRAL
+
+
+def test_every_mood_has_a_reaction():
+    assert {m.emoji for m in Mood} == {"😄", "😠", "😐", "😢", "😳"}

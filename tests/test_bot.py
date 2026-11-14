@@ -111,6 +111,7 @@ async def test_chat_channel_reply_has_video(bot):
     await chat.on_message(msg)
     text, kw = msg.replies[0]
     assert text is None and kw["file"].filename == "kitsune.mp4"  # video only, like Neku
+    assert msg.reactions == ["😄"]  # her mood, on the user's message
 
 
 async def test_ignores_every_other_channel(bot):

@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Optional
+from typing import Awaitable, Callable, Optional
 
 from .avatar import AvatarRenderer, split_lines
 from .errors import ProviderError, RenderError
@@ -68,12 +68,26 @@ class ReplyPipeline:
             )
         return reply
 
-    async def reply(self, chat_id: str, user_id: str, user_name: str, text: str, *, video: bool = True) -> Reply:
+    async def reply(
+        self,
+        chat_id: str,
+        user_id: str,
+        user_name: str,
+        text: str,
+        *,
+        video: bool = True,
+        on_mood: Optional[Callable[[Mood], Awaitable[None]]] = None,
+    ) -> Reply:
         """Raises :class:`~kitsune.errors.ChatError` if the LLM fails; speech/render failures only drop the video."""
         async with self._slots:
             answer = await self.think(chat_id, user_id, user_name, text)
             mood = await self.emotion.detect(answer) if answer else Mood.NEUTRAL
             result = Reply(answer, mood)
+            if on_mood is not None and answer:
+                try:
+                    await on_mood(mood)  # e.g. react to the user's message before the video is ready
+                except Exception as e:
+                    log.debug("on_mood callback failed: %s", e)
             if not (answer and video and self.can_talk):
                 return result
             try:

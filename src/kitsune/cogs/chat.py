@@ -25,10 +25,14 @@ class Chat(commands.Cog):
         bot = self.bot
         author = message.author
         name = getattr(author, "display_name", None) or getattr(author, "name", "someone")
+
+        async def react(mood: Any) -> None:  # her mood, as a reaction on the user's message
+            await message.add_reaction(mood.emoji)
+
         async with message.channel.typing():
             try:
                 reply = await bot.pipeline.reply(
-                    str(message.channel.id), str(author.id), name, text, video=bot.config.talking_video
+                    str(message.channel.id), str(author.id), name, text, video=bot.config.talking_video, on_mood=react
                 )
             except ChatError as e:
                 log.warning("chat failed: %s", e)
