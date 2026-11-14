@@ -36,7 +36,7 @@ from .subtitles import SrtEntry, escape_filter_path, get_duration_ffprobe, write
 
 #: libass style for the burned-in subtitles (sizes are in a 288-line script space, so they scale with the video)
 SUBTITLE_STYLE = (
-    "FontName=DejaVu Sans,FontSize=19,Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
+    "FontName=DejaVu Sans,FontSize=17,Bold=0,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,"
     "BackColour=&H80000000,BorderStyle=1,Outline=2,Shadow=1,Alignment=2,MarginV=16"
 )
 
