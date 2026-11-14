@@ -1,0 +1,82 @@
+"""Settings, read from the environment (and a .env file if present)."""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import List
+
+
+def _load_dotenv(path: str = ".env") -> None:
+    p = Path(path)
+    if not p.is_file():
+        return
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+def _list(name: str, default: str) -> List[str]:
+    return [x.strip() for x in os.getenv(name, default).split(",") if x.strip()]
+
+
+def _bool(name: str, default: bool) -> bool:
+    v = os.getenv(name)
+    return default if v is None else v.strip().lower() in ("1", "true", "yes", "on")
+
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+@dataclass
+class Config:
+    # Vector
+    nsec: str = ""
+    prefix: str = "!"
+    data_dir: str = "./data"
+    # channels are matched by name (substring, case-insensitive) or exact id
+    chat_channels: List[str] = field(default_factory=lambda: ["kitsune bot"])
+    image_channels: List[str] = field(default_factory=lambda: ["anime image generator"])
+    # Ollama (local by default; set OLLAMA_API_KEY for ollama.com cloud)
+    ollama_host: str = "http://localhost:11434"
+    ollama_model: str = "llama3.1"
+    ollama_api_key: str = ""
+    history_turns: int = 12
+    # NovelAI
+    novelai_token: str = ""
+    voice_seed: str = "Aini"
+    image_model: str = "nai-diffusion-4-5-full"
+    image_size: str = "portrait"
+    # behaviour
+    video_size: int = 256            # square talking video (Neku used 480)
+    talking_video: bool = True       # reply with a lip-synced video (False: text only)
+    emotion_model: str = "bhadresh-savani/distilbert-base-uncased-emotion"
+    persona_file: str = str(ROOT / "kitsune" / "persona.md")
+    sprites_dir: str = str(ROOT / "assets" / "sprites")
+
+    @classmethod
+    def from_env(cls) -> "Config":
+        _load_dotenv()
+        c = cls()
+        c.nsec = os.getenv("VECTOR_NSEC", "")
+        c.prefix = os.getenv("KITSUNE_PREFIX", c.prefix)
+        c.data_dir = os.getenv("KITSUNE_DATA_DIR", c.data_dir)
+        c.chat_channels = _list("KITSUNE_CHAT_CHANNELS", ",".join(c.chat_channels))
+        c.image_channels = _list("KITSUNE_IMAGE_CHANNELS", ",".join(c.image_channels))
+        c.ollama_host = os.getenv("OLLAMA_HOST", c.ollama_host).rstrip("/")
+        c.ollama_model = os.getenv("OLLAMA_MODEL", c.ollama_model)
+        c.ollama_api_key = os.getenv("OLLAMA_API_KEY", "")
+        c.history_turns = int(os.getenv("KITSUNE_HISTORY_TURNS", c.history_turns))
+        c.novelai_token = os.getenv("NOVELAI_TOKEN", "")
+        c.voice_seed = os.getenv("NOVELAI_VOICE_SEED", c.voice_seed)
+        c.image_model = os.getenv("NOVELAI_IMAGE_MODEL", c.image_model)
+        c.image_size = os.getenv("NOVELAI_IMAGE_SIZE", c.image_size)
+        c.video_size = int(os.getenv("KITSUNE_VIDEO_SIZE", c.video_size))
+        c.talking_video = _bool("KITSUNE_TALKING_VIDEO", c.talking_video)
+        c.emotion_model = os.getenv("KITSUNE_EMOTION_MODEL", c.emotion_model)
+        c.persona_file = os.getenv("KITSUNE_PERSONA_FILE", c.persona_file)
+        return c

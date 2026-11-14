@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kitsune-bot"
+version = "0.1.0"
+description = "Kitsune: a talking fox-girl anime bot for Vector (Ollama chat, NovelAI voice and images, lip-synced avatar)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "vector-sdk-py @ git+https://github.com/lucky-edgelord/vector-sdk-py",
+    "httpx>=0.27",
+    "numpy>=1.26",
+    "pillow>=10",
+    "novelai-sdk>=0.15",
+]
+
+[project.optional-dependencies]
+emotion = ["transformers>=4.40", "torch>=2.2"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+
+[project.scripts]
+kitsune = "kitsune.__main__:main"
+
+[tool.setuptools]
+packages = ["kitsune"]
+
+[tool.setuptools.package-data]
+kitsune = ["persona.md"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
