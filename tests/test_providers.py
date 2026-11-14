@@ -88,3 +88,26 @@ async def test_novelai_images_wraps_sdk_errors():
 
     with pytest.raises(ImageError, match="Anlas"):
         await NovelAIImages("pst-x", client=Broken).generate("1girl")
+
+
+async def test_novelai_tts_retries_server_errors():
+    calls = []
+
+    def flaky(req):
+        calls.append(1)
+        return httpx.Response(500, text="oops") if len(calls) < 3 else httpx.Response(200, content=b"ok")
+
+    tts = NovelAISpeech("pst-x", transport=httpx.MockTransport(flaky), backoff=0)
+    assert await tts.synthesize("hi") == b"ok" and len(calls) == 3
+
+
+async def test_novelai_tts_does_not_retry_auth_errors():
+    calls = []
+
+    def denied(req):
+        calls.append(1)
+        return httpx.Response(401, text="no")
+
+    with pytest.raises(SpeechError, match="401"):
+        await NovelAISpeech("pst-x", transport=httpx.MockTransport(denied), backoff=0).synthesize("hi")
+    assert len(calls) == 1
