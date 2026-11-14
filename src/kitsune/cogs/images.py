@@ -14,6 +14,17 @@ from ..errors import ImageError
 log = logging.getLogger(__name__)
 
 
+def art_embed(prompt: str, pngs: list, model: str, author: Any = None) -> dict:
+    """vector-sdk-py's faux embed: prompt card, the image, then a footer (sent as separate messages)."""
+    name = getattr(author, "display_name", None) or getattr(author, "name", None)
+    embed = vector.Embed(title="🖼️ Kitsune's art", description=prompt[:400])
+    embed.set_image(url="attachment://kitsune_0.png")
+    embed.set_footer(text=f"NovelAI · {model}" + (f" · for {name}" if name else ""))
+    embed.timestamp = vector.utils.utcnow()
+    files = [vector.File(png, filename=f"kitsune_{i}.png") for i, png in enumerate(pngs)]
+    return {"embed": embed, "files": files}
+
+
 class Images(commands.Cog):
     def __init__(self, bot: Any) -> None:
         self.bot = bot
@@ -38,8 +49,7 @@ class Images(commands.Cog):
                 log.warning("image failed: %s", e)
                 await message.reply(f"🦊 NovelAI said no: {e}")
                 return
-        files = [vector.File(png, filename=f"kitsune_{i}.png") for i, png in enumerate(pngs)]
-        await message.reply(f"-# 🖼️ {prompt[:180]}", files=files)
+        await message.reply(**art_embed(prompt, pngs, self.bot.config.image_model, message.author))
 
     @commands.Cog.listener()
     async def on_message(self, message: Any) -> None:

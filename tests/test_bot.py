@@ -170,8 +170,9 @@ async def test_image_channel_draws(bot):
     for text in ("1girl, fox ears, red hair",):
         msg = Message(text, ART_CH)
         await images.on_message(msg)
-        reply, kw = msg.replies[0]
-        assert "fox ears" in reply and len(kw["files"]) == 1
+        _, kw = msg.replies[0]
+        assert "fox ears" in kw["embed"].description and len(kw["files"]) == 1
+        assert kw["embed"].image.url == "attachment://kitsune_0.png"
     msg = Message("!image 1girl, kitsune", ART_CH)
     await images.draw(msg, "1girl, kitsune")
     assert len(msg.replies[0][1]["files"]) == 1
