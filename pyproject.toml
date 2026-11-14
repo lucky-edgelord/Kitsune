@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kitsune-bot"
-version = "0.1.0"
+version = "0.2.0"
 description = "Kitsune: a talking fox-girl anime bot for Vector (Ollama chat, NovelAI voice and images, lip-synced avatar)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -19,16 +19,35 @@ dependencies = [
 
 [project.optional-dependencies]
 emotion = ["transformers>=4.40", "torch>=2.2"]
-dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.6", "mypy>=1.10"]
 
 [project.scripts]
 kitsune = "kitsune.__main__:main"
 
-[tool.setuptools]
-packages = ["kitsune"]
+[project.urls]
+Homepage = "https://github.com/lucky-edgelord/Kitsune"
+Issues = "https://github.com/lucky-edgelord/Kitsune/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.package-data]
-kitsune = ["persona.md"]
+kitsune = ["persona/*.md", "assets/sprites/*/*.png"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["UP006", "UP007", "UP035", "UP045", "B008", "B905"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = ["bot: needs vector-sdk-py installed"]

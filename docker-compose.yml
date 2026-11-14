@@ -1,0 +1,14 @@
+services:
+  ollama:
+    image: ollama/ollama
+    volumes: [ollama:/root/.ollama]
+  kitsune:
+    build: .
+    env_file: .env
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    volumes: [./data:/app/data]
+    depends_on: [ollama]
+    restart: unless-stopped
+volumes:
+  ollama:

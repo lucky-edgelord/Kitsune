@@ -1,4 +1,4 @@
-"""Settings, read from the environment (and a .env file if present)."""
+"""Settings, read from the environment (and a ``.env`` file in the working directory, if present)."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def _bool(name: str, default: bool) -> bool:
     return default if v is None else v.strip().lower() in ("1", "true", "yes", "on")
 
 
-ROOT = Path(__file__).resolve().parent.parent
+PACKAGE_DIR = Path(__file__).resolve().parent
 
 
 @dataclass
@@ -52,15 +52,17 @@ class Config:
     image_model: str = "nai-diffusion-4-5-full"
     image_size: str = "portrait"
     # behaviour
-    video_size: int = 256            # square talking video (Neku used 480)
-    talking_video: bool = True       # reply with a lip-synced video (False: text only)
+    video_size: int = 256  # square talking video (Neku used 480)
+    talking_video: bool = True  # reply with a lip-synced video (False: text only)
     emotion_model: str = "bhadresh-savani/distilbert-base-uncased-emotion"
-    persona_file: str = str(ROOT / "kitsune" / "persona.md")
-    sprites_dir: str = str(ROOT / "assets" / "sprites")
+    persona_file: str = str(PACKAGE_DIR / "persona" / "kitsune.md")
+    sprites_dir: str = str(PACKAGE_DIR / "assets" / "sprites")
+    emotion_threshold: float = 0.45
+    max_concurrent_renders: int = 2
 
     @classmethod
-    def from_env(cls) -> "Config":
-        _load_dotenv()
+    def from_env(cls, dotenv: str = ".env") -> Config:
+        _load_dotenv(dotenv)
         c = cls()
         c.nsec = os.getenv("VECTOR_NSEC", "")
         c.prefix = os.getenv("KITSUNE_PREFIX", c.prefix)
@@ -79,4 +81,19 @@ class Config:
         c.talking_video = _bool("KITSUNE_TALKING_VIDEO", c.talking_video)
         c.emotion_model = os.getenv("KITSUNE_EMOTION_MODEL", c.emotion_model)
         c.persona_file = os.getenv("KITSUNE_PERSONA_FILE", c.persona_file)
+        c.sprites_dir = os.getenv("KITSUNE_SPRITES_DIR", c.sprites_dir)
+        c.emotion_threshold = float(os.getenv("KITSUNE_EMOTION_THRESHOLD", c.emotion_threshold))
+        c.max_concurrent_renders = int(os.getenv("KITSUNE_MAX_CONCURRENT", c.max_concurrent_renders))
         return c
+
+    @property
+    def has_novelai(self) -> bool:
+        return bool(self.novelai_token)
+
+    def validate(self) -> None:
+        from .errors import ConfigError
+
+        if not self.nsec:
+            raise ConfigError("VECTOR_NSEC is not set (Kitsune's Vector key, in .env or the environment)")
+        if self.video_size < 64 or self.video_size > 1024:
+            raise ConfigError("KITSUNE_VIDEO_SIZE must be between 64 and 1024")

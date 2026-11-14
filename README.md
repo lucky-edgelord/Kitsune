@@ -1,5 +1,8 @@
 # 🦊 Kitsune
 
+[![CI](https://github.com/lucky-edgelord/Kitsune/actions/workflows/ci.yml/badge.svg)](https://github.com/lucky-edgelord/Kitsune/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![License](https://img.shields.io/badge/license-MIT-green)
+
 A talking fox-girl bot for the Anime community on [Vector](https://vectorapp.io), built on
 [vector-sdk-py](https://github.com/lucky-edgelord/vector-sdk-py). Kitsune is the successor to Neku: she chats
 through **Ollama**, speaks with **NovelAI** text-to-speech, and replies with a short **lip-synced video** of her Fox
@@ -13,7 +16,7 @@ Mafia avatar. Her expression is picked by a **DistilBERT emotion** model. She al
 ## How a reply is made
 
 1. Your message and recent history (per user, per channel, in SQLite) go to Ollama with Kitsune's persona
-   ([kitsune/persona.md](kitsune/persona.md)).
+   ([persona/kitsune.md](src/kitsune/persona/kitsune.md)).
 2. [`bhadresh-savani/distilbert-base-uncased-emotion`](https://huggingface.co/bhadresh-savani/distilbert-base-uncased-emotion)
    reads her reply: joy/surprise → happy, anger → mad, sadness/fear → sad, love → shy, low confidence → neutral.
 3. NovelAI TTS v2 voices the reply.
@@ -43,8 +46,14 @@ python -m venv .venv && . .venv/bin/activate
 pip install -e ".[emotion]"          # drop [emotion] to skip torch; she'll always look neutral
 ollama pull llama3.1                 # or any chat model; set OLLAMA_MODEL
 cp .env.example .env                 # fill in VECTOR_NSEC, NOVELAI_TOKEN, ...
-python -m kitsune                    # or: kitsune
+kitsune check                        # verifies keys, Ollama, ffmpeg
+kitsune run
 ```
+
+Or with Docker (includes an Ollama container): `docker compose up -d`, then
+`docker compose exec ollama ollama pull llama3.1`.
+
+`kitsune render "Hello, kit!" --mood auto -o hello.mp4` makes a clip without connecting to Vector.
 
 Give Kitsune her **own** Vector account (a fresh nsec) and invite it to the Anime community.
 
@@ -60,18 +69,26 @@ Give Kitsune her **own** Vector account (a fresh nsec) and invite it to the Anim
 | `KITSUNE_TALKING_VIDEO` | `true` | `false` for text-only replies |
 | `KITSUNE_PREFIX`, `KITSUNE_DATA_DIR` | `!`, `./data` | |
 
-## Layout
+## Project layout
 
 ```
-kitsune/bot.py      Vector bot: channels, commands, reply pipeline
-kitsune/llm.py      Ollama chat client
-kitsune/emotion.py  DistilBERT emotion -> sprite mood
-kitsune/novelai.py  NovelAI TTS (api.novelai.net) and images (novelai-sdk)
-kitsune/avatar.py   lip-sync + blink renderer (numpy, Pillow, ffmpeg)
-kitsune/memory.py   per-user chat history (SQLite)
-assets/sprites/     Fox Mafia sprites: <mood>/{open,blink}_{closed,talk}.png
+src/kitsune/
+  app.py              KitsuneBot (vector-sdk-py commands.Bot), loads the cogs
+  cogs/               chat.py · images.py · utility.py
+  pipeline.py         ReplyPipeline: think -> feel -> speak -> animate (no Vector dependency)
+  services.py         builds all backends from Config; swap any of them
+  providers/
+    llm/              ChatModel protocol · Ollama
+    speech/           SpeechSynthesizer protocol · NovelAI TTS
+    images/           ImageGenerator protocol · NovelAI images
+    emotion/          EmotionDetector protocol · DistilBERT · fixed
+  avatar/             sprites.py · lipsync.py · renderer.py
+  storage/memory.py   per-user chat history (SQLite)
+  persona/kitsune.md  her personality (edit freely)
+  assets/sprites/     Fox Mafia sprites: <mood>/{open,blink}_{closed,talk}.png
+tests/                one file per module, no network
 ```
 
-Tests: `pip install -e ".[dev]" && pytest`.
+More in [docs/architecture.md](docs/architecture.md). Contributing: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Kitsune is a community project and is not affiliated with Vector, NovelAI, Ollama or Hugging Face.
