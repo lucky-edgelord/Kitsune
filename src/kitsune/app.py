@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from vector.ext import commands
 
+from .channels import is_hers
 from .config import Config
 from .pipeline import ReplyPipeline
 from .services import Services
@@ -31,6 +32,16 @@ class KitsuneBot(commands.Bot):
         warm = getattr(self.services.emotion, "warm_up", None)
         if warm is not None:  # load the emotion model in the background, not on the first message
             asyncio.get_running_loop().run_in_executor(None, warm)
+
+    async def process_commands(self, message: Any) -> None:
+        # she ignores every channel except her chat and image channels
+        if is_hers(self, message.channel):
+            await super().process_commands(message)
+
+    async def on_command_error(self, context: Any, exception: Exception) -> None:
+        if isinstance(exception, (commands.CheckFailure, commands.CommandNotFound)):
+            return  # wrong channel for that command, or not a command: stay quiet
+        await super().on_command_error(context, exception)
 
     async def on_ready(self) -> None:
         log.info("Kitsune is online as %s", self.user)

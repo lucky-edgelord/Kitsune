@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.3.0
+- `!image <prompt>`. Kitsune ignores every channel except her chat channel (videos) and image channel (art).
 - The avatar is now a port of Neku's pipeline: per-sentence TTS segments, ffprobe-timed SRT, sox/ffmpeg merge,
   16 fps volume classes and the `grid[class][i % 32]` frame grid, with burned-in subtitles. Replies are video only.
 - Lip-sync: the smoother 24 fps mouth/blink tracks are the default; `KITSUNE_LIPSYNC=neku` uses Neku's 16 fps classes.

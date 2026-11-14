@@ -1,4 +1,4 @@
-"""NovelAI art: the image channel and ``!imagine``."""
+"""NovelAI art, only in the image channel: type a prompt or use ``!image <prompt>``."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any
 import vector
 from vector.ext import commands
 
-from ..channels import matches
+from ..channels import is_image
 from ..errors import ImageError
 
 log = logging.getLogger(__name__)
@@ -18,15 +18,18 @@ class Images(commands.Cog):
     def __init__(self, bot: Any) -> None:
         self.bot = bot
 
+    async def cog_check(self, ctx: commands.Context) -> bool:
+        return is_image(self.bot, ctx.channel)
+
     async def draw(self, message: Any, prompt: str) -> None:
-        images = self.bot.services.images
-        prefix = self.bot.config.prefix
-        if images is None:
-            await message.reply("🦊 Image generation needs a NovelAI token (NOVELAI_TOKEN).")
-            return
         prompt = prompt.strip()
         if not prompt:
-            await message.reply(f"Give me some tags, kit: `{prefix}imagine 1girl, fox ears, red hair, night city`")
+            p = self.bot.config.prefix
+            await message.reply(f"Give me a prompt, kit: `{p}image 1girl, fox ears, red hair, night city`")
+            return
+        images = self.bot.services.images
+        if images is None:
+            await message.reply("🦊 Image generation needs a NovelAI token (NOVELAI_TOKEN).")
             return
         async with message.channel.typing():
             try:
@@ -41,15 +44,15 @@ class Images(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: Any) -> None:
         bot = self.bot
-        if message.author.bot or message.author == bot.user:
+        if message.author.bot or message.author == bot.user or not is_image(bot, message.channel):
             return
         text = (message.content or "").strip()
-        if text and not text.startswith(bot.config.prefix) and matches(message.channel, bot.config.image_channels):
+        if text and not text.startswith(bot.config.prefix):
             await self.draw(message, text)
 
-    @commands.command(name="imagine", aliases=["img", "draw"])
-    async def imagine(self, ctx: commands.Context, *, prompt: str = "") -> None:
-        """Generate an anime image (Danbooru-style tags work best)."""
+    @commands.command(name="image", aliases=["imagine", "img", "draw"])
+    async def image(self, ctx: commands.Context, *, prompt: str = "") -> None:
+        """Generate anime art with NovelAI."""
         await self.draw(ctx.message, prompt)
 
 

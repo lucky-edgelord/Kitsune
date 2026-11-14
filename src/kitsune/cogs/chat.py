@@ -1,4 +1,4 @@
-"""Talking to Kitsune: her channel, mentions and ``!kitsune``."""
+"""Talking to Kitsune, only in her chat channel."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any
 import vector
 from vector.ext import commands
 
-from ..channels import matches
+from ..channels import is_chat
 from ..errors import ChatError
 
 log = logging.getLogger(__name__)
@@ -18,13 +18,16 @@ class Chat(commands.Cog):
     def __init__(self, bot: Any) -> None:
         self.bot = bot
 
+    async def cog_check(self, ctx: commands.Context) -> bool:
+        return is_chat(self.bot, ctx.channel)
+
     async def talk(self, message: Any, text: str) -> None:
-        bot, pipeline = self.bot, self.bot.pipeline
+        bot = self.bot
         author = message.author
         name = getattr(author, "display_name", None) or getattr(author, "name", "someone")
         async with message.channel.typing():
             try:
-                reply = await pipeline.reply(
+                reply = await bot.pipeline.reply(
                     str(message.channel.id), str(author.id), name, text, video=bot.config.talking_video
                 )
             except ChatError as e:
@@ -41,17 +44,15 @@ class Chat(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message: Any) -> None:
         bot = self.bot
-        if message.author.bot or message.author == bot.user:
+        if message.author.bot or message.author == bot.user or not is_chat(bot, message.channel):
             return
         text = (message.content or "").strip()
-        if not text or text.startswith(bot.config.prefix):
-            return
-        if matches(message.channel, bot.config.chat_channels) or (bot.user and bot.user.mentioned_in(message)):
+        if text and not text.startswith(bot.config.prefix):
             await self.talk(message, text)
 
     @commands.command(name="kitsune", aliases=["kit", "k"])
     async def kitsune(self, ctx: commands.Context, *, text: str = "") -> None:
-        """Talk to Kitsune from any channel."""
+        """Talk to Kitsune."""
         if not text:
             await ctx.reply(f"Hm? Say something, kit. `{self.bot.config.prefix}kitsune <message>`")
             return
@@ -59,7 +60,7 @@ class Chat(commands.Cog):
 
     @commands.command(name="forget", aliases=["reset"])
     async def forget(self, ctx: commands.Context) -> None:
-        """Make Kitsune forget your conversation in this channel."""
+        """Make Kitsune forget your conversation."""
         n = self.bot.pipeline.store.forget(str(ctx.channel.id), str(ctx.author.id))
         await ctx.reply("🦊 Forgotten. Who are you again?" if n else "🦊 We haven't even talked yet, kit.")
 

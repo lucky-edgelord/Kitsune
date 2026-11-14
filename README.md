@@ -28,14 +28,15 @@ Mafia avatar. Her expression is picked by a **DistilBERT emotion** model. She al
 
 ## Channels and commands
 
-| Where | What happens |
-|---|---|
-| **🤖┊Kitsune Bot** | Just talk; she answers every message |
-| **🖼️┊Anime Image Generator** | Type Danbooru-style tags; she draws them |
-| anywhere | `!kitsune <message>` (or mention her) · `!imagine <tags>` |
-| | `!forget` clears your chat history · `!mood <happy\|mad\|neutral\|sad\|shy>` · `!help` |
+Kitsune only uses her two channels and **ignores every other channel completely** (messages, mentions and commands).
 
-Channels are matched by name (or id), so they keep working if you rename the emoji part.
+| Channel | What she does |
+|---|---|
+| **🤖┊Kitsune Bot** | Just talk: every message gets a talking video with subtitles. Also `!kitsune <message>`, `!forget` (clear your chat history), `!mood <happy\|mad\|neutral\|sad\|shy>`, `!help` |
+| **🖼️┊Anime Image Generator** | Type a prompt, or `!image <prompt>`, and she draws it with NovelAI. Also `!help` |
+
+Channels are matched by name (or id) via `KITSUNE_CHAT_CHANNELS` / `KITSUNE_IMAGE_CHANNELS`, so renaming the emoji
+part keeps working.
 
 ## Setup
 
