@@ -1,4 +1,11 @@
-"""Sprite sets: ``<sprites_dir>/<mood>/{open,blink}_{closed,talk}.png``, cropped square on a backdrop."""
+"""Neku's frame grid, built from the Fox Mafia sprites.
+
+Neku loaded three looping videos (``vids/0.mp4`` closed, ``1.mp4`` half, ``2.mp4`` open) into ``self.grid`` and
+picked ``grid[volume_class][i % 32]``. Here each mood's sprites build the same 3 x 32 grid: row 0 has the mouth
+closed, rows 1 and 2 talking, and every row blinks once per loop (two seconds at 16 fps).
+
+Sprites live in ``<sprites_dir>/<mood>/{open,blink}_{closed,talk}.png``.
+"""
 
 from __future__ import annotations
 
@@ -11,8 +18,12 @@ from PIL import Image, ImageDraw, ImageFilter
 
 from ..moods import Mood
 
-#: frame order; index = (2 if blinking else 0) + (1 if mouth open else 0)
 FRAME_NAMES = ("open_closed", "open_talk", "blink_closed", "blink_talk")
+ROWS = 3  # Neku's volume classes
+LOOP = 32  # frames per row, as in Neku (i % 32)
+BLINK_AT = range(24, 27)  # loop positions where her eyes are shut
+
+Grid = List[List[np.ndarray]]
 
 
 def backdrop(size: int) -> Image.Image:
@@ -34,36 +45,46 @@ def square_crop(im: Image.Image, top_fraction: float = 0.02) -> Image.Image:
 
 
 class SpriteBank:
-    """Loads and caches composited RGB frames per mood at one square size."""
-
-    def __init__(self, sprites_dir: str, size: int = 256) -> None:
+    def __init__(self, sprites_dir: str, size: int = 512) -> None:
         self.sprites_dir = sprites_dir
         self.size = size - size % 2
-        self._cache: Dict[Mood, List[np.ndarray]] = {}
+        self._frames: Dict[Mood, Dict[str, np.ndarray]] = {}
+        self._grids: Dict[Mood, Grid] = {}
 
     def moods(self) -> List[Mood]:
         return [m for m in Mood if os.path.isdir(os.path.join(self.sprites_dir, m.value))]
 
-    def frames(self, mood: Mood) -> List[np.ndarray]:
-        if mood not in self._cache:
+    def frames(self, mood: Mood) -> Dict[str, np.ndarray]:
+        """The four composited frames of a mood, by name."""
+        if mood not in self._frames:
             folder = os.path.join(self.sprites_dir, mood.value)
             if not os.path.isdir(folder):
-                return self.frames(Mood.NEUTRAL) if mood is not Mood.NEUTRAL else self._missing()
+                if mood is Mood.NEUTRAL:
+                    raise FileNotFoundError(f"no sprites in {self.sprites_dir!r}")
+                return self.frames(Mood.NEUTRAL)
             bg = backdrop(self.size).convert("RGBA")
-            frames = []
+            out = {}
             for name in FRAME_NAMES:
                 im = Image.open(os.path.join(folder, f"{name}.png")).convert("RGBA")
                 im = square_crop(im).resize((self.size, self.size), Image.LANCZOS)
                 canvas = bg.copy()
                 canvas.alpha_composite(im)
-                frames.append(np.asarray(canvas.convert("RGB")))
-            self._cache[mood] = frames
-        return self._cache[mood]
+                out[name] = np.asarray(canvas.convert("RGB"))
+            self._frames[mood] = out
+        return self._frames[mood]
 
-    def _missing(self) -> List[np.ndarray]:
-        raise FileNotFoundError(f"no sprites in {self.sprites_dir!r} (expected <mood>/{FRAME_NAMES[0]}.png)")
+    def grid(self, mood: Mood) -> Grid:
+        """``grid[volume_class][i % LOOP]``, exactly how Neku indexed its videos."""
+        if mood not in self._grids:
+            f = self.frames(mood)
+            rows: Grid = []
+            for row in range(ROWS):
+                mouth = "closed" if row == 0 else "talk"
+                rows.append([f[f"{'blink' if i in BLINK_AT else 'open'}_{mouth}"] for i in range(LOOP)])
+            self._grids[mood] = rows
+        return self._grids[mood]
 
     def still_png(self, mood: Mood) -> bytes:
         buf = io.BytesIO()
-        Image.fromarray(self.frames(mood)[0]).save(buf, format="PNG")
+        Image.fromarray(self.frames(mood)["open_closed"]).save(buf, format="PNG")
         return buf.getvalue()

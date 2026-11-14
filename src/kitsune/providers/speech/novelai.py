@@ -17,7 +17,7 @@ class NovelAISpeech:
         self,
         token: str,
         *,
-        voice_seed: str = "Aini",
+        voice_seed: str = "Aurae",
         timeout: float = 120.0,
         transport: Optional[httpx.AsyncBaseTransport] = None,
     ) -> None:

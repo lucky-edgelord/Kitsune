@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kitsune-bot"
-version = "0.2.0"
+version = "0.3.0"
 description = "Kitsune: a talking fox-girl anime bot for Vector (Ollama chat, NovelAI voice and images, lip-synced avatar)"
 readme = "README.md"
 requires-python = ">=3.10"

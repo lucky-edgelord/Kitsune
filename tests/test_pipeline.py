@@ -25,6 +25,7 @@ async def test_full_reply_has_text_mood_and_video(happy):
     r = await p.reply("chan", "u1", "Lucky", "did you watch it?")
     assert r.text == "Hah, of course I watched it!" and r.mood is Mood.HAPPY
     assert r.video and r.video[4:8] == b"ftyp" and r.warning is None
+    assert p.speech.texts == ["Hah, of course I watched it!"]  # one TTS call per line
     system = p.chat.calls[0][0]
     assert system["role"] == "system" and "Kitsune" in system["content"] and "Lucky" in system["content"]
 
@@ -53,3 +54,9 @@ async def test_chat_failure_propagates_and_is_not_remembered(happy):
     with pytest.raises(ChatError):
         await p.reply("c", "u", "L", "hi")
     assert p.store.history("c", "u", 5) == []
+
+
+async def test_do_tts_makes_neku_segments(happy):
+    p = make(happy)
+    segs = await p.do_tts("Hi kit! Watch Frieren.")
+    assert [s["text"] for s in segs] == ["Hi kit!", "Watch Frieren."] and all(s["audio"] for s in segs)

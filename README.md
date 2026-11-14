@@ -19,10 +19,12 @@ Mafia avatar. Her expression is picked by a **DistilBERT emotion** model. She al
    ([persona/kitsune.md](src/kitsune/persona/kitsune.md)).
 2. [`bhadresh-savani/distilbert-base-uncased-emotion`](https://huggingface.co/bhadresh-savani/distilbert-base-uncased-emotion)
    reads her reply: joy/surprise → happy, anger → mad, sadness/fear → sad, love → shy, low confidence → neutral.
-3. NovelAI TTS v2 voices the reply.
-4. The avatar renderer picks that mood's four frames (eyes open/blinking × mouth closed/talking), opens the mouth
-   with the voice's loudness, blinks every few seconds, and encodes a square MP4 (256×256 by default) with ffmpeg.
-5. She replies with the text plus the video. Without a NovelAI token she replies with text only.
+3. NovelAI TTS v2 (voice Aurae) voices the reply one sentence at a time; ffprobe times each line for the
+   subtitles.
+4. Neku's avatar pipeline (ported, see [docs/architecture.md](docs/architecture.md)) picks that mood's four frames (eyes open/blinking × mouth closed/talking), opens the mouth
+   with the voice's loudness, blinks every few seconds, and encodes a square MP4 (512×512 by default) with ffmpeg.
+   The lines are joined, written as an SRT and burned in with ffmpeg's `subtitles` filter (Neku's pipeline).
+5. She replies with just the video. Without a NovelAI token she replies with text only.
 
 ## Channels and commands
 
@@ -62,10 +64,11 @@ Give Kitsune her **own** Vector account (a fresh nsec) and invite it to the Anim
 | `VECTOR_NSEC` | (required) | Kitsune's Vector key |
 | `OLLAMA_HOST`, `OLLAMA_MODEL`, `OLLAMA_API_KEY` | `http://localhost:11434`, `llama3.1`, none | key only for ollama.com |
 | `NOVELAI_TOKEN` | none | persistent API token; enables voice, video and images |
-| `NOVELAI_VOICE_SEED` | `Aini` | any TTS v2 voice or seed (`seedmix:` works) |
+| `NOVELAI_VOICE_SEED` | `Aurae` | any TTS v2 voice or seed (`seedmix:` works) |
 | `NOVELAI_IMAGE_MODEL`, `NOVELAI_IMAGE_SIZE` | `nai-diffusion-4-5-full`, `portrait` | |
 | `KITSUNE_CHAT_CHANNELS`, `KITSUNE_IMAGE_CHANNELS` | `kitsune bot`, `anime image generator` | name substrings or ids |
-| `KITSUNE_VIDEO_SIZE` | `256` | square video size (Neku used 480) |
+| `KITSUNE_VIDEO_SIZE` | `512` | square video size |
+| `KITSUNE_SUBTITLES` | `true` | burn the reply in as subtitles |
 | `KITSUNE_TALKING_VIDEO` | `true` | `false` for text-only replies |
 | `KITSUNE_PREFIX`, `KITSUNE_DATA_DIR` | `!`, `./data` | |
 

@@ -33,8 +33,8 @@ class Chat(commands.Cog):
                 return
         if not reply.text:
             return
-        if reply.video:
-            await message.reply(reply.text, file=vector.File(reply.video, filename="kitsune.mp4"))
+        if reply.video:  # the words are in the subtitles, so the video goes alone (like Neku)
+            await message.reply(file=vector.File(reply.video, filename="kitsune.mp4"))
         else:
             await message.reply(reply.text)
 

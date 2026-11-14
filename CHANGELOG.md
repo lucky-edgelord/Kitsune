@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+- The avatar is now a port of Neku's pipeline: per-sentence TTS segments, ffprobe-timed SRT, sox/ffmpeg merge,
+  16 fps volume classes and the `grid[class][i % 32]` frame grid, with burned-in subtitles. Replies are video only.
+- Voice Aurae, 512×512 by default, bold readable subtitles.
+- Fix: replies used the old renderer, so live videos had no subtitles.
+
 ## 0.2.0
 - Restructured into a `src/` package with swappable providers (LLM, speech, images, emotion) behind Protocols.
 - `ReplyPipeline` (think → feel → speak → animate) separated from the Vector bot; features are cogs.

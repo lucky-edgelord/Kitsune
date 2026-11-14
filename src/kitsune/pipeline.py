@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 
-from .avatar import AvatarRenderer
+from .avatar import AvatarRenderer, split_lines
 from .errors import ProviderError, RenderError
 from .moods import Mood
 from .providers.emotion import EmotionDetector
@@ -37,6 +37,7 @@ class ReplyPipeline:
         speech: Optional[SpeechSynthesizer] = None,
         avatar: Optional[AvatarRenderer] = None,
         history_turns: int = 12,
+        subtitles: bool = True,
         max_concurrent: int = 2,
     ) -> None:
         self.persona = persona
@@ -46,6 +47,7 @@ class ReplyPipeline:
         self.speech = speech
         self.avatar = avatar
         self.history_turns = history_turns
+        self.subtitles = subtitles
         self._slots = asyncio.Semaphore(max_concurrent)
 
     @property
@@ -75,9 +77,21 @@ class ReplyPipeline:
             if not (answer and video and self.can_talk):
                 return result
             try:
-                audio = await self.speech.synthesize(answer)  # type: ignore[union-attr]
-                result.video = await self.avatar.render_async(audio, mood)  # type: ignore[union-attr]
+                result.video = await self.speak(answer, mood)
             except (ProviderError, RenderError) as e:
                 log.warning("no video for this reply: %s", e)
                 result.warning = str(e)
             return result
+
+    async def do_tts(self, text: str) -> list:
+        """Voice each line separately: the ``[{"text", "audio"}]`` segments Neku got from Inworld."""
+        assert self.speech is not None
+        lines = split_lines(text) or [text]
+        audios = await asyncio.gather(*(self.speech.synthesize(line) for line in lines))
+        return [{"text": line, "audio": audio} for line, audio in zip(lines, audios)]
+
+    async def speak(self, text: str, mood: Mood) -> bytes:
+        """Neku's ``avatar_waifu``: segments -> merged voice + SRT -> volume classes -> grid video with subtitles."""
+        assert self.avatar is not None
+        segments = await self.do_tts(text)
+        return await self.avatar.avatar_video_async(segments, mood, subtitles=self.subtitles)

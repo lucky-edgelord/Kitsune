@@ -23,9 +23,25 @@ cogs/images.py ──► ImageGenerator.generate()                   providers/i
 * **`app.py`**: `KitsuneBot` (a vector-sdk-py `commands.Bot`) loads the cogs in `setup_hook` and warms up the
   emotion model in the background.
 
-## Lip-sync
+## The avatar: Neku's pipeline, ported
 
-The voice is decoded to 16 kHz mono and split into one window per video frame (24 fps). A frame's mouth is open when
-its RMS loudness is above 35% of the clip's 90th-percentile loudness. Switching state needs a two-frame hold (so it
-flaps rather than flickers), and long open runs close for a frame every seven frames so it reads as syllables.
-Blinks last three frames, every 2.5–5 seconds.
+`avatar/` is a port of Neku's `fgk_neku.py` (`FGKBot.avatar_waifu` and its helpers), with the same steps and names:
+
+| Neku | Kitsune |
+|---|---|
+| Inworld returns `[{text, audio}]` per sentence | `ReplyPipeline.do_tts`: Ollama reply split into lines, each voiced by NovelAI (Aurae) |
+| `merge_base64_mp3s_sox` + `get_duration_ffprobe` + `write_srt_file` | `avatar.merge_mp3s` (sox, or ffmpeg if sox is missing) + the same SRT helpers |
+| `audio_analysis` (librosa RMS at 16 fps → 0/1/2) | `avatar.audio_analysis` (ffmpeg decode, thresholds relative to the clip, 3-frame median) |
+| `self.grid` from `vids/0-2.mp4`, `grid[A][i % 32]` | `SpriteBank.grid(mood)`: 3 × 32 frames from the mood's sprites, blink in the loop |
+| `create_grid_video` (OpenCV) → ffmpeg mux → `add_vid_subs` | `AvatarRenderer.create_grid_video`: one ffmpeg pass for frames, audio and subtitles |
+| `ctx.reply(file=miku.mp4)` | the chat cog replies with just the video |
+
+What changed and why:
+* **Per-render temp directories.** Neku wrote to a shared `crockpot/` and ran `rm crockpot/*`, so two people
+  talking at once clobbered each other's files.
+* **One encode instead of three**, no OpenCV, no librosa/numba: faster and much lighter to install.
+* **Relative loudness thresholds.** Neku's 0.1 / 0.125 were tuned to Inworld's audio level; Kitsune's adapt to any
+  voice (`NEKU_THRESHOLDS` is still available).
+* **Moods.** DistilBERT picks which sprite set fills the grid.
+* **Readable subtitles** for phones (bold, outlined, scaled to the video), and all blocking work runs off the event
+  loop so the bot stays responsive while rendering.

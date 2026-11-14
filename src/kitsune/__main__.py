@@ -30,7 +30,7 @@ def _render(args: argparse.Namespace, config: Config) -> int:
 
         mood = DistilBertEmotion(config.emotion_model).detect_sync(args.text or "")
     with open(args.output, "wb") as f:
-        f.write(renderer.render(audio, mood))
+        f.write(renderer.avatar_video([{"text": args.text, "audio": audio}], mood, subtitles=bool(args.text)))
     print(f"wrote {args.output} ({mood.value})")
     return 0
 

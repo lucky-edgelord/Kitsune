@@ -4,4 +4,4 @@ from .config import Config
 from .moods import Mood
 
 __all__ = ["Config", "Mood", "__version__"]
-__version__ = "0.2.0"
+__version__ = "0.3.0"

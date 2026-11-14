@@ -82,7 +82,7 @@ async def test_chat_channel_reply_has_video(bot):
     msg = Message("hey kitsune", Channel("🤖┊Kitsune Bot"))
     await chat.on_message(msg)
     text, kw = msg.replies[0]
-    assert text == "Hah, of course I watched it!" and kw["file"].filename == "kitsune.mp4"
+    assert text is None and kw["file"].filename == "kitsune.mp4"  # video only, like Neku
 
 
 async def test_ignores_other_channels_bots_and_commands(bot):

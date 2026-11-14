@@ -48,11 +48,12 @@ class Config:
     history_turns: int = 12
     # NovelAI
     novelai_token: str = ""
-    voice_seed: str = "Aini"
+    voice_seed: str = "Aurae"
     image_model: str = "nai-diffusion-4-5-full"
     image_size: str = "portrait"
     # behaviour
-    video_size: int = 256  # square talking video (Neku used 480)
+    video_size: int = 512  # square talking video
+    subtitles: bool = True  # burn the reply into the video as subtitles, like Neku
     talking_video: bool = True  # reply with a lip-synced video (False: text only)
     emotion_model: str = "bhadresh-savani/distilbert-base-uncased-emotion"
     persona_file: str = str(PACKAGE_DIR / "persona" / "kitsune.md")
@@ -78,6 +79,7 @@ class Config:
         c.image_model = os.getenv("NOVELAI_IMAGE_MODEL", c.image_model)
         c.image_size = os.getenv("NOVELAI_IMAGE_SIZE", c.image_size)
         c.video_size = int(os.getenv("KITSUNE_VIDEO_SIZE", c.video_size))
+        c.subtitles = _bool("KITSUNE_SUBTITLES", c.subtitles)
         c.talking_video = _bool("KITSUNE_TALKING_VIDEO", c.talking_video)
         c.emotion_model = os.getenv("KITSUNE_EMOTION_MODEL", c.emotion_model)
         c.persona_file = os.getenv("KITSUNE_PERSONA_FILE", c.persona_file)
