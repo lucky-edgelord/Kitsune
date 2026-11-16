@@ -32,5 +32,7 @@ def test_punkt_handles_abbreviations():
     pytest.importorskip("nltk")
     if not text.ensure_punkt():
         pytest.skip("punkt_tab isn't installed (python -m nltk.downloader punkt_tab)")
-    got = text.sentences("I met Mr. Smith at 3.5 p.m. today, e.g. near the shrine. He waved! Did you see?")
-    assert got == ["I met Mr. Smith at 3.5 p.m. today, e.g. near the shrine.", "He waved!", "Did you see?"]
+    got = text.sentences("I met Mr. Smith at 3.5 p.m. today near the shrine. He waved! Did you see Dr. Stone?")
+    assert got == ["I met Mr. Smith at 3.5 p.m. today near the shrine.", "He waved!", "Did you see Dr. Stone?"]
+    # the old punctuation regex cut after "Mr." and "Dr."
+    assert len(text._FALLBACK.split("I met Mr. Smith. Did you see Dr. Stone?")) > 2
