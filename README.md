@@ -25,7 +25,7 @@ Mafia avatar. Her expression is picked by a **DistilBERT emotion** model. She al
    subtitles.
 4. Neku's avatar pipeline (ported, see [docs/architecture.md](docs/architecture.md)) picks that mood's four frames (eyes open/blinking × mouth closed/talking), opens the mouth
    with the voice's loudness, blinks every few seconds, and encodes a square MP4 (512×512 by default) with ffmpeg.
-   The lines are joined, written as an SRT and burned in with ffmpeg's `subtitles` filter (Neku's pipeline).
+   Replies are split into sentences with NLTK (Punkt; the `punkt_tab` data downloads on first start). The lines are joined, written as an SRT and burned in with ffmpeg's `subtitles` filter (Neku's pipeline).
 5. She replies with just the video. Without a NovelAI token she replies with text only.
 
 ## Channels and commands

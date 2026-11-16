@@ -67,6 +67,9 @@ def _check(config: Config) -> int:
         line(True, "emotion model support installed")
     except ImportError:
         print("⚠️  transformers not installed: install the [emotion] extra for moods")
+    from .text import ensure_punkt
+
+    line(ensure_punkt(), "NLTK sentence model (punkt_tab) available")
     from shutil import which
 
     line(which("ffmpeg") is not None, "ffmpeg installed")

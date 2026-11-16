@@ -13,6 +13,7 @@ from .channels import is_hers
 from .config import Config
 from .pipeline import ReplyPipeline
 from .services import Services
+from .text import ensure_punkt
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class KitsuneBot(commands.Bot):
     async def setup_hook(self) -> None:
         for ext in COGS:
             await self.load_extension(ext)
+        asyncio.get_running_loop().run_in_executor(None, ensure_punkt)  # sentence model: download once, not mid-reply
         warm = getattr(self.services.emotion, "warm_up", None)
         if warm is not None:  # load the emotion model in the background, not on the first message
             asyncio.get_running_loop().run_in_executor(None, warm)

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1
+- Replies are split into spoken lines/subtitles with NLTK's Punkt sentence model instead of a punctuation regex
+  ("Mr. Smith", "e.g." and "3.5" no longer break a line). The `punkt_tab` data is downloaded once at startup (baked into
+  the Docker image); if it can't be had, a warning is logged and the old punctuation split is used. `kitsune check`
+  reports it.
+
 ## 0.4.0
 - Per-user context in SQLite with compaction into a rolling memory after 8 exchanges (last 2 kept verbatim).
 - 👍/👎 on every talking video, stored with the prompt, reply and mood for future logs/training.

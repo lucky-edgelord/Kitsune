@@ -11,7 +11,8 @@ RUN pip wheel --wheel-dir /wheels ".[emotion]" --extra-index-url https://downloa
 FROM python:3.12-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 COPY --from=build /wheels /wheels
-RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
+RUN pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels \
+    && python -m nltk.downloader -d /usr/local/share/nltk_data punkt_tab
 WORKDIR /app
 VOLUME ["/app/data"]
 ENV KITSUNE_DATA_DIR=/app/data

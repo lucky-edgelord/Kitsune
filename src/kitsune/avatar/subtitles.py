@@ -3,22 +3,20 @@
 from __future__ import annotations
 
 import json
-import re
 import subprocess
 from datetime import timedelta
 from typing import Iterable, List, Tuple
 
 from ..errors import RenderError
+from ..text import sentences
 
 SrtEntry = Tuple[int, timedelta, timedelta, str]  # (index, start, end, text), as Neku built them
 
-_SENTENCE = re.compile(r"(?<=[.!?…])\s+|\n+")
-
 
 def split_lines(text: str, max_chars: int = 80) -> List[str]:
-    """Split a reply into spoken lines (Inworld delivered sentences this way): sentences, long ones broken up."""
+    """Split a reply into spoken lines (Inworld delivered sentences this way): NLTK sentences, long ones broken up."""
     lines: List[str] = []
-    for sentence in (s.strip() for s in _SENTENCE.split(text.strip())):
+    for sentence in sentences(text):
         while len(sentence) > max_chars:
             cut = max(sentence.rfind(", ", 0, max_chars), sentence.rfind(" ", 0, max_chars))
             cut = cut if cut > max_chars // 3 else max_chars
