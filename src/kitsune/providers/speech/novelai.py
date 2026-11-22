@@ -9,7 +9,7 @@ import httpx
 
 from ...errors import SpeechError
 
-API = "https://api.novelai.net"
+API = "https://text.novelai.net"  # TTS moved here from api.novelai.net on 2026-11-20
 MAX_CHARS = 1000  # NovelAI cuts longer text server-side
 
 

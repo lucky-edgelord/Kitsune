@@ -46,7 +46,7 @@ async def test_novelai_tts_request():
     tts = NovelAISpeech("pst-x", voice_seed="Aini", transport=t)
     assert isinstance(tts, SpeechSynthesizer)
     assert await tts.synthesize("hello " * 300) == b"ID3audio"
-    assert seen["url"] == "https://api.novelai.net/ai/generate-voice" and seen["auth"] == "Bearer pst-x"
+    assert seen["url"] == "https://text.novelai.net/ai/generate-voice" and seen["auth"] == "Bearer pst-x"
     assert seen["body"]["version"] == "v2" and seen["body"]["seed"] == "Aini" and len(seen["body"]["text"]) == 1000
 
 

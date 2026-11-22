@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2
+- Fix: NovelAI moved text-to-speech from `api.novelai.net` to `text.novelai.net` on 2026-11-20 (same request format); the old host
+  now answers 400, so Kitsune had stopped speaking. She uses the new host.
+
 ## 0.4.1
 - Replies are split into spoken lines/subtitles with NLTK's Punkt sentence model instead of a punctuation regex
   ("Mr. Smith", "e.g." and "3.5" no longer break a line). The `punkt_tab` data is downloaded once at startup (baked into
